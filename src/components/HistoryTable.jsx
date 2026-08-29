@@ -13,9 +13,14 @@ export default function HistoryTable({ onSelectAnalysis }) {
     setLoading(true);
     try {
       const result = await fetchAnalyses(page, 8, qualityLabel, search);
-      setData(result);
+      if (result && Array.isArray(result.analyses)) {
+        setData(result);
+      } else {
+        setData({ total: 0, page: 1, limit: 8, analyses: [] });
+      }
     } catch (err) {
       console.error(err);
+      setData({ total: 0, page: 1, limit: 8, analyses: [] });
     } finally {
       setLoading(false);
     }
@@ -43,7 +48,10 @@ export default function HistoryTable({ onSelectAnalysis }) {
     }
   };
 
-  const totalPages = Math.ceil(data.total / data.limit) || 1;
+  const analysesList = Array.isArray(data?.analyses) ? data.analyses : [];
+  const totalCount = typeof data?.total === 'number' ? data.total : 0;
+  const limitCount = data?.limit || 8;
+  const totalPages = Math.ceil(totalCount / limitCount) || 1;
 
   const getLabelBadge = (label) => {
     switch (label) {
@@ -106,7 +114,7 @@ export default function HistoryTable({ onSelectAnalysis }) {
           <RefreshCw className="w-6 h-6 text-indigo-600 animate-spin" />
           <p className="text-xs font-medium">Loading analysis history...</p>
         </div>
-      ) : data.analyses.length === 0 ? (
+      ) : analysesList.length === 0 ? (
         <div className="clean-panel p-12 text-center text-slate-500 space-y-2 bg-white">
           <HardDrive className="w-8 h-8 text-slate-400 mx-auto" />
           <h4 className="text-sm font-bold text-slate-800">No Analysis History Found</h4>
@@ -114,7 +122,7 @@ export default function HistoryTable({ onSelectAnalysis }) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {data.analyses.map((item) => (
+          {analysesList.map((item) => (
             <div
               key={item.id}
               onClick={() => onSelectAnalysis(item)}
